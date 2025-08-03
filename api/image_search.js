@@ -16,9 +16,11 @@ export default async function handler(req, res) {
 
     const html = await duckRes.text();
 
-    // Kirim mentah isi HTML untuk dicek langsung
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(200).send(html);
+    // Ambil hanya potongan awal HTML (agar tidak crash)
+    const preview = html.substring(0, 3000); // potong 3000 karakter
+
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(200).send(preview);
 
   } catch (err) {
     return res.status(500).json({ error: 'Gagal mengambil HTML', details: err.message });
