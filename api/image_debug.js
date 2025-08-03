@@ -1,13 +1,13 @@
 export default async function handler(req, res) {
   const { q } = req.query;
   if (!q) {
-    return res.status(400).json({ error: 'Query kosong' });
+    return res.status(400).send('Query kosong');
   }
 
   try {
-    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(q)}`;
+    const url = `https://duckduckgo.com/?q=${encodeURIComponent(q)}`;
 
-    const duckRes = await fetch(searchUrl, {
+    const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         'Accept': 'text/html',
@@ -17,31 +17,11 @@ export default async function handler(req, res) {
       }
     });
 
-    const html = await duckRes.text();
+    const html = await response.text();
 
-    // Debug baris ini jika perlu
-    const match = html.match(/vqd='([a-zA-Z0-9\-]+)'/);
-
-    if (!match) {
-      return res.status(500).json({
-        error: 'Gagal mendapatkan token vqd',
-        debug: html.substring(0, 500), // tampilkan sebagian isi HTML
-      });
-    }
-
-    const vqd = match[1];
-    const imageApiUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(q)}&vqd=${vqd}&o=json`;
-
-    const imageRes = await fetch(imageApiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      }
-    });
-
-    const data = await imageRes.json();
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json(data.results || []);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.status(200).send(html);
   } catch (err) {
-    return res.status(500).json({ error: 'Terjadi kesalahan', detail: err.message });
+    return res.status(500).send('Gagal fetch: ' + err.message);
   }
 }
