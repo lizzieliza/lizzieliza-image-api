@@ -16,13 +16,34 @@ export default async function handler(req, res) {
 
     const html = await duckRes.text();
 
-    // Ambil hanya potongan awal HTML (agar tidak crash)
-    const preview = html.substring(0, 3000); // potong 3000 karakter
+    // Coba ambil vqd dengan regex yang aman
+    const match = html.match(/vqd='(.+?)'/);
 
-    res.setHeader('Content-Type', 'text/plain');
-    return res.status(200).send(preview);
+    // Jika gagal mendapatkan token, kirim cuplikan HTML sebagai debug
+    if (!match) {
+      return res.status(500).json({
+        error: 'Token vqd tidak ditemukan',
+        html_preview: html.substring(0, 3000)
+      });
+    }
+
+    const vqd = match[1];
+    const apiUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(q)}&vqd=${vqd}&o=json`;
+    const imageRes = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+
+    const data = await imageRes.json();
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(200).json(data.results || []);
 
   } catch (err) {
-    return res.status(500).json({ error: 'Gagal mengambil HTML', details: err.message });
+    return res.status(500).json({
+      error: 'Terjadi kesalahan',
+      details: err.message
+    });
   }
 }
