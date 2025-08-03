@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 export default async function handler(req, res) {
   const { q } = req.query;
   if (!q) {
@@ -6,24 +8,19 @@ export default async function handler(req, res) {
 
   try {
     const duckRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(q)}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept-Language': 'en-US,en;q=0.9',
+      }
     });
+
     const html = await duckRes.text();
-    const match = html.match(/vqd='(.+?)'/);
-    if (!match) {
-      return res.status(500).json({ error: 'Gagal mendapatkan token vqd' });
-    }
 
-    const vqd = match[1];
-    const apiUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(q)}&vqd=${vqd}&o=json`;
-    const imageRes = await fetch(apiUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    const data = await imageRes.json();
+    // Kirim mentah isi HTML untuk dicek langsung
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(html);
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json(data.results);
   } catch (err) {
-    return res.status(500).json({ error: 'Terjadi kesalahan', details: err.message });
+    return res.status(500).json({ error: 'Gagal mengambil HTML', details: err.message });
   }
 }
